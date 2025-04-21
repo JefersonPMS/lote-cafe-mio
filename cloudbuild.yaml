@@ -1,0 +1,58 @@
+substitutions:
+  _SERVICE_NAME: radar-service
+  _AR_HOSTNAME: southamerica-east1-docker.pkg.dev
+  _REPO_NAME: repositorio-radar-service
+  _DEPLOY_REGION: southamerica-east1
+
+steps:
+  # 1. Build da imagem com duas tags (SHA e latest)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: Build
+    args:
+      [
+        'build',
+        '-t', '${_AR_HOSTNAME}/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${SHORT_SHA}',
+        '-t', '${_AR_HOSTNAME}/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:latest',
+        '.'
+      ]
+
+  # 2. Push da imagem com SHA
+  - name: 'gcr.io/cloud-builders/docker'
+    id: Push-SHA
+    args:
+      [
+        'push',
+        '${_AR_HOSTNAME}/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${SHORT_SHA}'
+      ]
+
+  # 3. Push da imagem com latest
+  - name: 'gcr.io/cloud-builders/docker'
+    id: Push-Latest
+    args:
+      [
+        'push',
+        '${_AR_HOSTNAME}/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:latest'
+      ]
+
+  # 4. Deploy no Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    id: Deploy
+    entrypoint: 'gcloud'
+    args:
+      [
+        'run', 'deploy', '${_SERVICE_NAME}',
+        '--image', '${_AR_HOSTNAME}/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${SHORT_SHA}',
+        '--region', '${_DEPLOY_REGION}',
+        '--platform', 'managed',
+        '--allow-unauthenticated',
+        '--memory', '1Gi',
+        '--cpu', '1'
+      ]
+
+images:
+  - '${_AR_HOSTNAME}/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${SHORT_SHA}'
+  - '${_AR_HOSTNAME}/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:latest'
+
+options:
+  substitutionOption: ALLOW_LOOSE
+  logging: CLOUD_LOGGING_ONLY
