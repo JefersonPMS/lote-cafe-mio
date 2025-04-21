@@ -59,7 +59,7 @@ async def radar_pdf(lote: str = Query(..., description="Nome do lote (ex.: 'Lote
     # 3) gera o radar plot
     fig = create_radar(series, lote)
 
-    # 4) salva em PDF na memória
+    # 4) salva em PDF na memória  
     buf = io.BytesIO()
     fig.savefig(buf, format="pdf", bbox_inches="tight")
     plt.close(fig)
