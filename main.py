@@ -65,7 +65,7 @@ async def radar_pdf(lote: str = Query(..., description="Nome do lote (ex.: 'Lote
     plt.close(fig)
     buf.seek(0)
 
-    # 5) retorna o PDF
+    # 5) retorna o PDF 
     return StreamingResponse(
         buf,
         media_type="application/pdf",
