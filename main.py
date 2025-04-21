@@ -46,31 +46,30 @@ def create_radar(data: pd.Series, lote: str) -> plt.Figure:
     ax.grid(True)
     return fig
 
-@app.get("/radar", response_class=StreamingResponse)
+@app.get("/radar")
 async def radar_pdf(lote: str = Query(..., description="Nome do lote (ex.: 'Lote - 1')")):
-    # 1) carrega os dados
     df = load_data()
-
-    # 2) filtra e calcula média do lote
     series = prepare_lote(df, lote)
     if series is None:
         raise HTTPException(status_code=404, detail=f"Lote '{lote}' não encontrado")
 
-    # 3) gera o radar plot
     fig = create_radar(series, lote)
-
-    # 4) salva em PDF na memória  
     buf = io.BytesIO()
     fig.savefig(buf, format="pdf", bbox_inches="tight")
     plt.close(fig)
     buf.seek(0)
 
-    # 5) retorna o PDF 
-    return StreamingResponse(
-        buf,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'inline; filename="{lote}_radar.pdf"'}
-    )
+    # Codifica PDF como base64
+    import base64
+    pdf_bytes = buf.getvalue()
+    encoded_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+
+    return {
+        "fileName": f"{lote}_radar.pdf",
+        "pdf_base64": encoded_pdf,
+        "mimetype": "application/pdf"
+    }
+
 
 if __name__ == "__main__":
     import uvicorn
